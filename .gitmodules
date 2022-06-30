@@ -1,0 +1,3 @@
+[submodule "sup_ground_seg/GndNet"]
+	path = sup_ground_seg/GndNet
+	url = git@github.com:finnSartoris/GndNet.git
