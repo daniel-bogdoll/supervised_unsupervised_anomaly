@@ -10,3 +10,6 @@
 [submodule "self_scene_flow/flowstep3d"]
 	path = self_scene_flow/flowstep3d
 	url = git@github.com:finnSartoris/flowstep3d.git
+[submodule "sup_mos/LiDAR-MOS"]
+	path = sup_mos/LiDAR-MOS
+	url = git@github.com:finnSartoris/LiDAR-MOS.git
