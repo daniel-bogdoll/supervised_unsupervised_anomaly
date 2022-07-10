@@ -5,7 +5,7 @@ This repo is part of the following thesis **[Anomaly Detection in Lidar Data by 
 
 ## Method Overview
 
-![Overview](/figures/method_flowchart.pdf)
+![Overview](/figures/method_flowchart.png)
 
 
 ## How to use the code
