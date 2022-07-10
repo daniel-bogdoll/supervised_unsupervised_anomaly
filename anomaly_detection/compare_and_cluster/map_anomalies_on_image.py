@@ -149,7 +149,7 @@ def map_anomalies_on_image(path_velo, path_labels, path_img, path_clustering_3, 
 def main(seq):
     seq = '{0:02d}'.format(int(seq))
     # load config file
-    config_filename = '/fzi/ids/kb422/BA_repo_open_source/supervised_unsupervised_anomaly/anomaly_detection/config/config_paths.yaml'
+    config_filename = 'config/config_paths.yaml'
     config = yaml.load(open(config_filename), Loader=yaml.FullLoader)
     
     path_dataset = config['path_dataset']
