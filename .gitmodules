@@ -1,15 +1,15 @@
-[submodule "sup_ground_seg/GndNet"]
-	path = sup_ground_seg/GndNet
-	url = git@github.com:finnSartoris/GndNet.git
 [submodule "self_odometry/DeLORA"]
 	path = self_odometry/DeLORA
 	url = git@github.com:finnSartoris/DeLORA.git
-[submodule "sup_semantic/SalsaNext"]
-	path = sup_semantic/SalsaNext
-	url = git@github.com:finnSartoris/SalsaNext.git
 [submodule "self_scene_flow/flowstep3d"]
 	path = self_scene_flow/flowstep3d
 	url = git@github.com:finnSartoris/flowstep3d.git
+[submodule "sup_ground_seg/GndNet"]
+	path = sup_ground_seg/GndNet
+	url = git@github.com:finnSartoris/GndNet.git
+[submodule "sup_semantic/SalsaNext"]
+	path = sup_semantic/SalsaNext
+	url = git@github.com:finnSartoris/SalsaNext.git
 [submodule "sup_mos/LiDAR-MOS"]
 	path = sup_mos/LiDAR-MOS
 	url = git@github.com:finnSartoris/LiDAR-MOS.git
