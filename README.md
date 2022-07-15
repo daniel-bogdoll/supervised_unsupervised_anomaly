@@ -7,6 +7,18 @@ This repo is part of the following thesis **[Anomaly Detection in Lidar Data by 
 
 ![Overview](/figures/method_flowchart.png)
 
+## Video demonstrations
+Sequence 19
+
+[![IMAGE ALT TEXT](https://img.youtube.com/vi/0JhJzvJtQ9o/0.jpg)](https://www.youtube.com/watch?v=0JhJzvJtQ9o "Anomaly Detection in Lidar Data (KITTI Odometry Seq. 19)")
+
+Sequence 11-21
+
+[![IMAGE ALT TEXT](https://img.youtube.com/vi/1MRW6LRDDJQ/0.jpg)](https://www.youtube.com/watch?v=1MRW6LRDDJQ "Anomaly Detection in Lidar Data (KITTI Odometry Seq. 11-21))")
+
+Sequence 00-21
+
+[![IMAGE ALT TEXT](https://img.youtube.com/vi/Dip3UJC09SE/0.jpg)](https://www.youtube.com/watch?v=Dip3UJC09SE "Anomaly Detection in Lidar Data (KITTI Odometry Seq. 00-21)")
 
 ## How to use the code
 * Clone this repo including the submodules: 
