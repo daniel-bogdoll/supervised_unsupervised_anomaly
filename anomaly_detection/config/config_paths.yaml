@@ -1,9 +1,9 @@
 # self-supervised motion labels
 visualize: False
-sequences: [11,12,13,14,15,16,17,18,19,20,21]
+sequences: [1]
 # path to dataset
-path_dataset: /data/dataset/sequences
+path_dataset: /disk/vanishing_data/ju878/dataset/sequences
 # path to inference folder
-path_inference: /data/inference
+path_inference: /disk/vanishing_data/ju878/test_odometry
 
 

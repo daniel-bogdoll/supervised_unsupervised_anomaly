@@ -162,7 +162,7 @@ split: #sequence number
     - 6
     - 7
   valid:
-    - 8
+    - 1
   test:
     - 9
     - 10
