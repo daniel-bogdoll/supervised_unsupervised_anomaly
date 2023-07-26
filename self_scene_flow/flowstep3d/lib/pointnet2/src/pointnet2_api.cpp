@@ -5,6 +5,8 @@
 #include "group_points_gpu.h"
 #include "sampling_gpu.h"
 #include "interpolate_gpu.h"
+#include <ATen/cuda/CUDAContext.h>
+
 
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {

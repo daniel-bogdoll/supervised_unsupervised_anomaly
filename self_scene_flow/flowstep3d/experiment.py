@@ -3,6 +3,7 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import MultiStepLR
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
+import lightning as l
 
 from utils.metrics import SceneFlowMetrics
 from utils.utils import get_num_workers
@@ -28,7 +29,7 @@ class SceneFlowExp(pl.LightningModule):
 
         super(SceneFlowExp, self).__init__()
         self.model = model
-        self.hparams = hparams
+        self.hparams.update(hparams)
         self.loss = losses_dict[hparams['loss']['loss_type']](**hparams['loss'])
         self.train_metrics = SceneFlowMetrics(split='train', loss_params=hparams['loss'], reduce_op='mean')
         self.val_metrics = SceneFlowMetrics(split='val', loss_params=hparams['loss'], reduce_op='mean')
@@ -78,16 +79,15 @@ class SceneFlowExp(pl.LightningModule):
 
         save_path =  self.hparams['data']['save_path']
         seq = self.hparams['data']['sequence']
-        seq = '{0:02d}'.format(int(seq))
+        seq = '{0:04d}'.format(int(seq))
 
         path_to_save = os.path.join(save_path,'scene_flow', seq, 'predictions', sf_file_name) #KITTI_odometry
         flow_pred_iter_5.tofile(path_to_save)
-
-        #loss = self.sequence_loss(pos1, pos2, flows_pred, flow_gt)
+        loss = self.sequence_loss(pos1, pos2, flows_pred, flow_gt)
         ##metrics = self.val_metrics(pos1, pos2, flows_pred, flow_gt)
         
         ##i_last = self.hparams[f'{split}_iters'] - 1
-        val_results = pl.EvalResult()
+        val_results = pl.LightningModule.log(self, name='val-loss', value=loss, sync_dist=True, batch_size=16)
         #val_results = pl.EvalResult(checkpoint_on=metrics[f'val_epe3d_i#{i_last}'])
         #val_results.log('val_loss', loss, sync_dist=True, on_step=False, on_epoch=True, logger=True, prog_bar=False, reduce_fx=torch.mean)
         ##val_results.log_dict(metrics, on_step=False, on_epoch=True, logger=True, prog_bar=False, reduce_fx=torch.mean)  # No need to sync_dist since metrics are already synced

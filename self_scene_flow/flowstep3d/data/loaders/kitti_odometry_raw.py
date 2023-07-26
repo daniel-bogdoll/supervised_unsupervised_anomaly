@@ -9,6 +9,7 @@ import os
 import cv2
 import matplotlib.pyplot as plt
 import yaml
+import re
 
 import torch.utils.data as data
 
@@ -33,7 +34,7 @@ class KITTI_odometry_raw(data.Dataset):
                  sequence,
                  remove_ground=True):
         
-        self.seq = '{0:02d}'.format(int(sequence))
+        self.seq = '{0:04d}'.format(int(sequence))
         self.root = osp.join(data_root, self.seq)
         self.save_path = osp.join(save_path)
         #assert train is False
@@ -102,7 +103,7 @@ class KITTI_odometry_raw(data.Dataset):
         assert(len(res_paths) == 1)
 
         all_velo_files = os.listdir(res_paths[0])
-        all_velo_files.sort()
+        all_velo_files = sorted(all_velo_files, key=lambda x: int(re.findall(r'\d+', x)[-1]))
         all_velo_files_paths = []
         for file in all_velo_files:
             all_velo_files_paths.append(os.path.join(res_paths[0], file))

@@ -4,13 +4,14 @@ import argparse
 import datetime
 import os.path as osp
 import torch
+from tqdm import tqdm
 
 from models import *
 from pytorch_lightning import Trainer
 from experiment import SceneFlowExp
 from pytorch_lightning.loggers import NeptuneLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
-import pytorch_lightning as pl
+import lightning_lite as pl
 
 
 def main(config):
@@ -41,13 +42,14 @@ def main(config):
     else:
         exp_ckpt_dir = osp.join(config['logging_params']['ckpt_dir'], 'test')
     os.makedirs(exp_ckpt_dir, exist_ok=True)
-    ckpt_callback = ModelCheckpoint(filepath=osp.join(exp_ckpt_dir, '{epoch}'),
+    ckpt_callback = ModelCheckpoint(dirpath=osp.join(exp_ckpt_dir, '{epoch}'),
                                     save_last=True
                                     )
     trainer = Trainer(logger=neptune_logger,
-                      checkpoint_callback=ckpt_callback,
+                      callbacks=[ckpt_callback],
                       **config['trainer_params'])
 
+    #trainer.ckpt_path = 'checkpoints/flowstep3d_self/2021-03-24_01-03/epoch=23.ckpt'
     if config['train']:
         print('Start Training!')
         trainer.fit(experiment)
@@ -75,5 +77,11 @@ if __name__ == '__main__':
         except yaml.YAMLError as exc:
             print(exc)
     pl.utilities.seed.seed_everything(seed=18)
-    # Run
-    main(config)
+    # adjusted for more than one sequence
+    sequences = config['exp_params']['data']['sequence']
+    for seq in tqdm(sequences):
+        config['exp_params']['data']['sequence'] = seq
+        
+        # Run
+        main(config)
+    

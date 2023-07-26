@@ -66,5 +66,7 @@ class ChamferLoss(Module):
         _, idx = pointutils.knn(self.k, pc_target, pc_pred)
         nn2 = pointutils.grouping_operation(pc_pred_t, idx.detach())
         dist2 = (pc_target_t.unsqueeze(3) - nn2).norm(p=self.loss_norm, dim=1).mean( dim=-1)  # nn flow consistency
-        ch_dist = (dist1 + dist2)
+        ch_dist = torch.cat((dist1, dist2), dim=1)
         return ch_dist.mean()
+
+        

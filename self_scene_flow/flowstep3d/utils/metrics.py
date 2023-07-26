@@ -1,17 +1,17 @@
 import torch
-from pytorch_lightning.metrics import TensorMetric
+from torchmetrics import Metric
 from typing import Any, Optional
 from losses.supervised_losses import *
 from losses.unsupervised_losses import *
 from losses.common_losses import *
 
 
-class EPE3D(TensorMetric):
+class EPE3D(Metric):
     def forward(self, pc_source: torch.Tensor, pc_target: torch.Tensor, pred_flow: torch.Tensor, gt_flow: torch.Tensor) -> torch.Tensor:
         epe3d = torch.norm(pred_flow - gt_flow, dim=2).mean()
         return epe3d
 
-class Acc3DR(TensorMetric):
+class Acc3DR(Metric):
     def forward(self, pc_source: torch.Tensor, pc_target: torch.Tensor, pred_flow: torch.Tensor, gt_flow: torch.Tensor) -> torch.Tensor:
         l2_norm = torch.norm(pred_flow - gt_flow, dim=2)
         sf_norm = torch.norm(gt_flow, dim=2)
@@ -19,7 +19,7 @@ class Acc3DR(TensorMetric):
         acc3d_relax = (torch.logical_or(l2_norm < 0.1, relative_err < 0.1)).float().mean()
         return acc3d_relax
 
-class Acc3DS(TensorMetric):
+class Acc3DS(Metric):
     def forward(self, pc_source: torch.Tensor, pc_target: torch.Tensor, pred_flow: torch.Tensor, gt_flow: torch.Tensor) -> torch.Tensor:
         l2_norm = torch.norm(pred_flow - gt_flow, dim=2)
         sf_norm = torch.norm(gt_flow, dim=2)
@@ -27,7 +27,7 @@ class Acc3DS(TensorMetric):
         acc3d_strict = (torch.logical_or(l2_norm < 0.05, relative_err < 0.05)).float().mean()
         return acc3d_strict
 
-class EPE3DOutliers(TensorMetric):
+class EPE3DOutliers(Metric):
     def forward(self, pc_source: torch.Tensor, pc_target: torch.Tensor, pred_flow: torch.Tensor, gt_flow: torch.Tensor) -> torch.Tensor:
         l2_norm = torch.norm(pred_flow - gt_flow, dim=2)
         sf_norm = torch.norm(gt_flow, dim=2)
@@ -35,7 +35,7 @@ class EPE3DOutliers(TensorMetric):
         epe3d_outliers = (torch.logical_or(l2_norm > 0.3, relative_err > 0.1)).float().mean()
         return epe3d_outliers
 
-class SupervisedL1LossMetric(TensorMetric):
+class SupervisedL1LossMetric(Metric):
     def __init__(self, name: str, reduce_op: Optional[Any] = None):
         super(SupervisedL1LossMetric, self).__init__(name=name, reduce_op=reduce_op)
         self.loss = SupervisedL1Loss()
@@ -44,21 +44,38 @@ class SupervisedL1LossMetric(TensorMetric):
         return loss_metric
 
 
-class SmoothnessLossMetric(TensorMetric):
+class SmoothnessLossMetric(Metric):
     def __init__(self, smoothness_loss_params, name: str, reduce_op: Optional[Any] = None):
         super(SmoothnessLossMetric, self).__init__(name=name, reduce_op=reduce_op)
         self.loss = SmoothnessLoss(**smoothness_loss_params)
     def forward(self, pc_source: torch.Tensor, pc_target: torch.Tensor, pred_flow: torch.Tensor, gt_flow: torch.Tensor) -> torch.Tensor:
         loss_metric = self.loss(pc_source, pred_flow)
         return loss_metric
+    def update(self, preds: torch.Tensor, target: torch.Tensor):
+        preds, target = self._input_format(preds, target)
+        assert preds.shape == target.shape
 
-class ChamferLossMetric(TensorMetric):
+        self.correct += torch.sum(preds == target)
+        self.total += target.numel()
+    def compute(self):
+        return self.correct.float() / self.total
+
+class ChamferLossMetric(Metric):
     def __init__(self, chamfer_loss_params, name: str, reduce_op: Optional[Any] = None):
         super(ChamferLossMetric, self).__init__(name=name, reduce_op=reduce_op)
         self.loss = ChamferLoss(**chamfer_loss_params)
     def forward(self, pc_source: torch.Tensor, pc_target: torch.Tensor, pred_flow: torch.Tensor, gt_flow: torch.Tensor) -> torch.Tensor:
         loss_metric = self.loss(pc_source, pc_target, pred_flow)
         return loss_metric
+    def update(self, preds: torch.Tensor, target: torch.Tensor):
+        preds, target = self._input_format(preds, target)
+        assert preds.shape == target.shape
+
+        self.correct += torch.sum(preds == target)
+        self.total += target.numel()
+    def compute(self):
+        return self.correct.float() / self.total
+    
 
 
 class SceneFlowMetrics():
