@@ -1,1 +1,4 @@
 
+[submodule "flowstep3d"]
+	path = flowstep3d
+	url = git@github.com:vincentgeppert/flowstep3d.git
