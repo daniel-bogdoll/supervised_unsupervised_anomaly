@@ -7,9 +7,6 @@
 [submodule "sup_mos/LiDAR-MOS"]
 	path = sup_mos/LiDAR-MOS
 	url = git@github.com:vincentgeppert/LiDAR-MOS.git
-[submodule "self_odometry/DeLORA"]
-	path = self_odometry/DeLORA
-	url = git@github.com:vincentgeppert/DeLORA.git
 [submodule "self_scene_flow/flowstep3d"]
 	path = self_scene_flow/flowstep3d
 	url = git@github.com:vincentgeppert/flowstep3d.git
