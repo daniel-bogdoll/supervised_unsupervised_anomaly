@@ -1,6 +1,3 @@
-[submodule "self_scene_flow/flowstep3d"]
-	path = self_scene_flow/flowstep3d
-	url = git@github.com:vincentgeppert/flowstep3d.git
 [submodule "sup_ground_seg/GndNet"]
 	path = sup_ground_seg/GndNet
 	url = git@github.com:vincentgeppert/GndNet.git
