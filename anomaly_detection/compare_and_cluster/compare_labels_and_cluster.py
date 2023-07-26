@@ -3,7 +3,9 @@ import os
 import yaml
 import cv2
 import open3d as o3d
+import re
 from collections import defaultdict
+from tqdm import tqdm
 
 def depth_remover(pc, threshold):
     near_mask_z = np.logical_and(pc[:, 2] < threshold, pc[:, 2] > -threshold)
@@ -238,7 +240,7 @@ def write_to_file(labels, pc_post, found_clusters_incon_static_dyn_3, found_clus
  
 if __name__ == '__main__':
     # load config file
-    config_filename = 'config/config_paths.yaml'
+    config_filename = 'anomaly_detection/config/config_paths.yaml'
     config = yaml.load(open(config_filename), Loader=yaml.FullLoader)
     
     sequences = config['sequences']
@@ -249,18 +251,18 @@ if __name__ == '__main__':
         os.makedirs(os.path.join(path_inference, 'anomalies_sup_self'))
     
     number_of_clusters = defaultdict(dict)
-    for seq in sequences:
-        seq = '{0:02d}'.format(int(seq))
+    for seq in tqdm(sequences):
+        seq = '{0:04d}'.format(int(seq))
         path_raw = os.path.join(path_dataset, seq, 'velodyne')
         path_calib = os.path.join(path_dataset ,seq, 'calib.txt')
-        config_file = 'config/combine_mos_semantics.yaml'
+        config_file = 'anomaly_detection/config/combine_mos_semantics.yaml'
 
         supervised_labels = os.path.join(path_inference, 'SalsaNext_combined_semantics_mos', seq, 'predictions')
         self_supervised_labels = os.path.join(path_inference, 'self_motion_labels', seq)
         path_to_save = os.path.join(path_inference, 'anomalies_sup_self', seq)
             
         files = os.listdir(self_supervised_labels)
-        files.sort()
+        files = sorted(files, key=lambda x: int(re.findall(r'\d+', x)[-1]))
         for frame in range(len(files)):
             frame_path_pc = os.path.join(path_raw, files[frame])
 
@@ -292,10 +294,10 @@ if __name__ == '__main__':
             anomaly_labels = check_consistency_labels(sup_sem_labels, self_labels, config_file)
             
             # get frame name
-            if files[frame] == '000000.bin':
+            if files[frame].split('_')[-1] == '0.bin':
                 frame_number = '0'
             else:
-                frame_number = files[frame].split('.')[0].lstrip('0')
+                frame_number = files[frame].split('_')[-1].split('.')[0].lstrip('0')
 
             # cluster inconsistent points
             clusters_incon_static_dyn, clusters_incon_dyn_static = cluster_points(pc_xyz_post_velo_coor, anomaly_labels, 1, 25)

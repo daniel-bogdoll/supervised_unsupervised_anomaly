@@ -4,6 +4,8 @@ import open3d as o3d
 import matplotlib.pyplot as plt
 import numpy.ma as ma
 import yaml
+import re
+from tqdm import tqdm
 from collections import defaultdict
 
 def read_calib_file(filepath, data_dic):
@@ -277,7 +279,7 @@ def visualize_motion_segmentation(pc_lidar_coor, labels):
     o3d.visualization.draw_geometries([pcd_static] + [pcd_dynamic] + [axis], window_name='motion segmentation results')
 
 def main(seq, path_raw, path_infer, visualize):
-    seq = '{0:02d}'.format(int(seq))
+    seq = '{0:04d}'.format(int(seq))
 
     path_calib = os.path.join(path_raw ,seq, 'calib.txt')
     post_processed_pts = os.path.join(path_infer, 'scene_flow' , seq, 'post_processed_points_cam_coor')
@@ -285,14 +287,14 @@ def main(seq, path_raw, path_infer, visualize):
     path_to_timestamps = os.path.join(path_raw, seq, 'times.txt')
         
     files = os.listdir(post_processed_pts)
-    files.sort()
+    files = sorted(files, key=lambda x: int(re.findall(r'\d+', x)[-1]))
         
     for frame in range(len(files)-1):
         #get file names
-        if files[frame] == '000000.bin':
+        if files[frame].split('_')[-1] == '0.bin':
             frame_num = 0
         else:
-            frame_num = int(files[frame].split('.')[0].lstrip('0'))
+            frame_num = int(files[frame].split('_')[-1].split('.')[0].lstrip('0'))
         frame_t0 = files[frame]
         frame_t1 = files[frame+1]
         scene_flow_t0 = files[frame].split('.')[0] + '_flow.bin'
@@ -310,7 +312,7 @@ def main(seq, path_raw, path_infer, visualize):
 
 if __name__ == '__main__':
     # load config file
-    config_filename = 'config/config_paths.yaml'
+    config_filename = '/disk/no_backup/ju878/model_contradictions/supervised_unsupervised_anomaly/anomaly_detection/config/config_paths.yaml'
     config = yaml.load(open(config_filename), Loader=yaml.FullLoader)
     
     visualize = config['visualize']
@@ -318,7 +320,7 @@ if __name__ == '__main__':
     path_dataset = config['path_dataset']
     path_inference = config['path_inference']
     
-    for seq in sequences:
+    for seq in tqdm(sequences):
         main(seq, path_dataset, path_inference, visualize)
     
     

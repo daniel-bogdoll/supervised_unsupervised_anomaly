@@ -4,6 +4,8 @@ import cv2
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
 import yaml
+import re
+from tqdm import tqdm
 
 def read_calib_file(filepath, data_dic):    
     """
@@ -66,7 +68,7 @@ def get_labels_and_colors(anomaly_labels, color_dict):
     return sem_label_color
 
 
-def get_point_camerafov(pts_velo, calib, img, img_width, img_height, label_color):
+def get_point_camerafov(pts_velo, calib, img, img_width, img_height, label_color, dataset):
     """
     Inspired by: https://github.com/darylclimb/cvml_project/blob/master/projections/lidar_camera_projection/utils.py
     """
@@ -76,9 +78,31 @@ def get_point_camerafov(pts_velo, calib, img, img_width, img_height, label_color
 
     # apply projection
     pts_2d = project_to_image(pts_velo_xyz.transpose(), proj_velo2cam2)
+    
 
-    # Filter lidar points to be within image FOV
     inds = np.where((pts_2d[0, :] < img_width) & (pts_2d[0, :] >= 0) &
+                (pts_2d[1, :] < img_height) & (pts_2d[1, :] >= 0) &
+                (pts_velo_xyz[:, 0] > 0)
+                )[0]
+    
+    if dataset == 'nuscenes':
+        inds = np.where((pts_2d[0, :] < img_width) & (pts_2d[0, :] >= 0) &
+                    (pts_2d[1, :] < img_height) & (pts_2d[1, :] >= 0) &
+                    (pts_velo_xyz[:, 0] > 1)
+                    )[0]
+    elif dataset == 'once':
+        for i, pt_2d in enumerate(pts_2d[0]):
+            if pt_2d < img_width / 2:
+                pts_2d[0, i] = pt_2d - (((img_width / 2 - pt_2d) ** 0.6) ** 0.6)
+            elif pt_2d > img_width / 2:
+                pts_2d[0, i] = pt_2d + (((pt_2d - img_width / 2) ** 0.6) ** 0.6)
+        for i , pt_2d in enumerate(pts_2d[1]):
+            if pt_2d < img_height / 1.3:
+                pts_2d[1, i] = pt_2d - ((pt_2d ** 0.7) ** 0.7)
+            elif pt_2d > img_height / 1.3:
+                pts_2d[1, i] = pt_2d - ((pt_2d ** 0.78) ** 0.78)
+                
+        inds = np.where((pts_2d[0, :] < img_width) & (pts_2d[0, :] >= 0) &
                     (pts_2d[1, :] < img_height) & (pts_2d[1, :] >= 0) &
                     (pts_velo_xyz[:, 0] > 0)
                     )[0]
@@ -107,7 +131,7 @@ def save_img_to_file(img, path_to_save, seq , frame_image):
     save_path = os.path.join(path_to_save, seq, 'anomalies_to_image', frame_image)
     cv2.imwrite(save_path, cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
 
-def map_anomalies_on_image(path_velo, path_labels, path_img, path_clustering_3, path_clustering_4, path_calibrations, path_save, sequence, frame_img):
+def map_anomalies_on_image(path_velo, path_labels, path_img, path_clustering_3, path_clustering_4, path_calibrations, path_save, sequence, frame_img, dataset):
     #open point cloud
     pc_velo_camerafov = np.fromfile(path_velo, dtype=np.float32).reshape((-1,3))
     anomaly_labels = np.fromfile(path_labels, dtype=np.int16).reshape((-1))
@@ -132,6 +156,7 @@ def map_anomalies_on_image(path_velo, path_labels, path_img, path_clustering_3, 
     anomaly_labels[mask_inconsistent_3] = anomalie_labels_inconsistent_3
     anomaly_labels[mask_inconsistent_4] = anomalie_labels_inconsistent_4
     
+    #{-1:[0,0,0], 1:[34,139,34], 2:[65,105,225], 3:[178,34,34], 4:[225,225,0]}
     color_dict = {-1:[0,0,0], 1:[34,139,34], 2:[65,105,225], 3:[178,34,34], 4:[225,225,0]}
     sem_label_color = get_labels_and_colors(anomaly_labels, color_dict)
     
@@ -141,15 +166,15 @@ def map_anomalies_on_image(path_velo, path_labels, path_img, path_clustering_3, 
     calib_dic = {}
     calib = read_calib_file(path_calibrations, calib_dic)
 
-    img = get_point_camerafov(pc_velo_camerafov, calib, rgb, img_width, img_height, sem_label_color)
+    img = get_point_camerafov(pc_velo_camerafov, calib, rgb, img_width, img_height, sem_label_color, dataset)
 
     if anomaly_labels.shape[0] != 0:
         save_img_to_file(img, path_save, sequence, frame_img)
 
 def main(seq):
-    seq = '{0:02d}'.format(int(seq))
+    seq = '{0:04d}'.format(int(seq))
     # load config file
-    config_filename = 'config/config_paths.yaml'
+    config_filename = 'anomaly_detection/config/config_paths.yaml'
     config = yaml.load(open(config_filename), Loader=yaml.FullLoader)
     
     path_dataset = config['path_dataset']
@@ -157,9 +182,20 @@ def main(seq):
     path_anomalies_sup_self = os.path.join(path_inference, 'anomalies_sup_self')
 
     frames = os.listdir(os.path.join(path_anomalies_sup_self, seq, 'anomaly_labels'))
-    frames.sort()
+    frames = sorted(frames, key=lambda x: int(re.findall(r'\d+', x)[-1]))
+    
+    once = r'^\d{6}_\d{13}_\d{1,2}\.bin$'
+    
+    
     for frame in range(len(frames)):
         frame_label = frames[frame]
+        dataset = ''
+        if re.match(once, frame_label):
+            dataset = 'once'
+        elif 'kitti' in frame_label:
+            dataset = 'kitti'
+        elif 'nuscenes' in frame_label:
+            dataset = 'nuscenes'
         frame_image = frames[frame].split('.')[0] +'.png'
         frame_clusters_incon_static_dyn_3 = frames[frame].split('.')[0] +'_cluster_incon_static_dyn_3.bin'
         frame_clusters_incon_dyn_static_4 = frames[frame].split('.')[0] +'_cluster_incon_dyn_static_4.bin'
@@ -171,13 +207,15 @@ def main(seq):
         path_anomaly_labels_frame = os.path.join(path_anomalies_sup_self, seq, 'anomaly_labels', frame_label)
         path_image_frame = os.path.join(path_dataset, seq, 'image_2', frame_image)
 
-        map_anomalies_on_image(path_pc_velo_camerafov_frame, path_anomaly_labels_frame, path_image_frame, path_clusters_frame_3, path_clusters_frame_4, path_calib_frame, path_anomalies_sup_self, seq, frame_image)
+        map_anomalies_on_image(path_pc_velo_camerafov_frame, path_anomaly_labels_frame, path_image_frame, path_clusters_frame_3, path_clusters_frame_4, path_calib_frame, path_anomalies_sup_self, seq, frame_image, dataset)
         
 if __name__ == '__main__':
     # load config file
-    config_filename = 'config/config_paths.yaml'
+    config_filename = 'anomaly_detection/config/config_paths.yaml'
     config = yaml.load(open(config_filename), Loader=yaml.FullLoader)
     
     sequences = config['sequences']
     with Pool(12) as p:
         p.map(main, sequences)
+    #for seq in tqdm(sequences):
+    #    main(seq)
