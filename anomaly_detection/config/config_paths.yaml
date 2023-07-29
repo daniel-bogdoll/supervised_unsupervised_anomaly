@@ -1,5 +1,5 @@
 path_dataset: /disk/vanishing_data/ju878/CODA_for_Finn_sequences/sequences
-path_inference: /disk/vanishing_data/ju878/log_finn/
+path_inference: /disk/vanishing_data/ju878/log_finn
 sequences:
 - 1
 - 2
